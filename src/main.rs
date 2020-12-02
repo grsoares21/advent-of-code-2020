@@ -7,11 +7,24 @@ fn day_1() {
         expense_report.push(line.unwrap().parse::<i32>().unwrap())
     }
 
+    // Challenge 1 specific
+    for first_number in &expense_report {
+        for second_number in &expense_report {
+            if first_number + second_number == 2020 {
+                println!("First challenge result: {}", first_number * second_number);
+            }
+        }
+    }
+
+    // Challenge 2 specific
     for first_number in &expense_report {
         for second_number in &expense_report {
             for third_number in &expense_report {
                 if first_number + second_number + third_number == 2020 {
-                    println!("Result: {}", first_number * second_number * third_number);
+                    println!(
+                        "Second challenge result: {}",
+                        first_number * second_number * third_number
+                    );
                 }
             }
         }
@@ -24,7 +37,6 @@ fn day_2() {
 
     for line in io::stdin().lock().lines() {
         let line_str = line.unwrap();
-        println!("Line: {}", line_str);
         let split_line: Vec<&str> = line_str.split_whitespace().collect();
         let policy: Vec<&str> = split_line[0].split('-').collect();
         let policy_min = policy[0].parse::<i32>().unwrap();
