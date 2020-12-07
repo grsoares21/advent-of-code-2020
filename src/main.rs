@@ -1,6 +1,6 @@
 #[allow(unused_must_use)]
-mod day_5;
+mod day_6;
 
 fn main() {
-    day_5::day_5();
+    day_6::day_6();
 }
