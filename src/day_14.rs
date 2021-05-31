@@ -1,3 +1,4 @@
+use im::HashMap;
 use regex::Regex;
 use std::io::{self, Read};
 
@@ -93,13 +94,119 @@ fn first_challenge(instructions: Vec<Instruction>) -> i64 {
     return resulting_memory.iter().fold(0, |a, b| a + b);
 }
 
-pub fn second_challenge(input: &String) {}
+fn replace_char_at(text: String, index: usize, new_char: char) -> String {
+    return text
+        .chars()
+        .enumerate()
+        .map(|(i, character)| if i == index { new_char } else { character })
+        .collect();
+}
+
+fn write_all_memory_for_masked_address(
+    masked_address_value: String,
+    value: i64,
+    current_memory: HashMap<String, i64>,
+) -> HashMap<String, i64> {
+    fn write_all_memory_for_each_char(
+        current_index: usize,
+        masked_address: String,
+        current_memory: HashMap<String, i64>,
+        value: i64,
+    ) -> HashMap<String, i64> {
+        if current_index == masked_address.len() {
+            return current_memory.update(masked_address, value);
+        }
+
+        if masked_address.chars().nth(current_index).unwrap() == 'X' {
+            let masked_address_replaced_with_zero =
+                replace_char_at(masked_address.clone(), current_index, '0');
+            let masked_address_replaced_with_one =
+                replace_char_at(masked_address, current_index, '1');
+
+            let memory_for_address_with_zero = write_all_memory_for_masked_address(
+                masked_address_replaced_with_zero,
+                value,
+                current_memory.clone(),
+            );
+            let memory_for_address_with_one = write_all_memory_for_masked_address(
+                masked_address_replaced_with_one,
+                value,
+                current_memory,
+            );
+
+            return memory_for_address_with_one.union(memory_for_address_with_zero);
+        }
+
+        return write_all_memory_for_each_char(
+            current_index + 1,
+            masked_address,
+            current_memory,
+            value,
+        );
+    }
+    return write_all_memory_for_each_char(0, masked_address_value, current_memory, value);
+}
+
+fn second_challenge(instructions: Vec<Instruction>) -> i64 {
+    let memory: HashMap<String, i64> = HashMap::new();
+
+    fn run_instructions(
+        current_mask: &str,
+        left_instructions: &[Instruction],
+        memory: HashMap<String, i64>,
+    ) -> HashMap<String, i64> {
+        println!("Instructions left: {}", left_instructions.len());
+        if left_instructions.len() == 0 {
+            return memory;
+        }
+
+        let (head_inst, left_insts) = left_instructions.split_at(1);
+
+        match &head_inst[0] {
+            Instruction::MaskChange(new_mask) => {
+                return run_instructions(new_mask, left_insts, memory)
+            }
+            Instruction::MemoryChange(memory_address, new_memory_value) => {
+                let memory_address_binary = format!("{:036b}", memory_address);
+
+                let new_masked_address: String = current_mask
+                    .chars()
+                    .enumerate()
+                    .map(|(i, character)| match character {
+                        'X' => 'X',                                           // replace by memory value
+                        '0' => memory_address_binary.chars().nth(i).unwrap(), // replace by memory value
+                        '1' => '1',
+                        _ => panic!("Invalid mask value"),
+                    })
+                    .collect();
+
+                let new_memory = write_all_memory_for_masked_address(
+                    new_masked_address,
+                    *new_memory_value,
+                    memory.clone(),
+                );
+
+                let next_memory = run_instructions(current_mask, left_insts, memory);
+                println!(
+                    "Instructions with memory updated: {}",
+                    left_instructions.len()
+                );
+                return new_memory
+                    .relative_complement(next_memory.clone())
+                    .union(next_memory);
+            }
+        }
+    }
+
+    let resulting_memory = run_instructions("", instructions.as_slice(), memory);
+
+    return resulting_memory.values().fold(0, |a, b| a + b);
+}
 
 pub fn day_14() {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input);
 
     let instructions = parse_input(&input);
-    println!("{}", first_challenge(instructions));
-    //second_challenge(&input);
+    println!("{}", second_challenge(instructions));
 }
