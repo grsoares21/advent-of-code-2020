@@ -126,15 +126,15 @@ fn write_all_memory_for_masked_address(
             let memory_for_address_with_zero = write_all_memory_for_masked_address(
                 masked_address_replaced_with_zero,
                 value,
-                current_memory.clone(),
-            );
-            let memory_for_address_with_one = write_all_memory_for_masked_address(
-                masked_address_replaced_with_one,
-                value,
                 current_memory,
             );
+            let final_memory = write_all_memory_for_masked_address(
+                masked_address_replaced_with_one,
+                value,
+                memory_for_address_with_zero,
+            );
 
-            return memory_for_address_with_one.union(memory_for_address_with_zero);
+            return final_memory;
         }
 
         return write_all_memory_for_each_char(
@@ -155,7 +155,6 @@ fn second_challenge(instructions: Vec<Instruction>) -> i64 {
         left_instructions: &[Instruction],
         memory: HashMap<String, i64>,
     ) -> HashMap<String, i64> {
-        println!("Instructions left: {}", left_instructions.len());
         if left_instructions.len() == 0 {
             return memory;
         }
@@ -185,15 +184,9 @@ fn second_challenge(instructions: Vec<Instruction>) -> i64 {
                     *new_memory_value,
                     memory.clone(),
                 );
+                let memory = run_instructions(current_mask, left_insts, new_memory);
 
-                let next_memory = run_instructions(current_mask, left_insts, memory);
-                println!(
-                    "Instructions with memory updated: {}",
-                    left_instructions.len()
-                );
-                return new_memory
-                    .relative_complement(next_memory.clone())
-                    .union(next_memory);
+                return memory;
             }
         }
     }
